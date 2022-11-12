@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
 
 namespace WebTraverser
 {
@@ -7,18 +8,18 @@ namespace WebTraverser
         private string _website;
         private string _outputFolder;
 
-        private List<string> _visitedPages;
+        private ConcurrentBag<string> _visitedPages;
 
         public Traverser(string website, string outputFolder)
         {
             _website= website;
             _outputFolder= outputFolder;
-            _visitedPages= new List<string>();
+            _visitedPages= new ConcurrentBag<string>();
         }
 
         public async Task Run()
         {
-            _visitedPages = new List<string> { _website };
+            _visitedPages.Add(_website);
             await TraversePage(_website);
         }
 
@@ -28,10 +29,8 @@ namespace WebTraverser
             PersistToFile(url, content);
 
             var links = GetUnvisitedLinks(content);
-            foreach (var link in links)
-            {
-                await TraversePage(link);
-            };
+
+            Task.WaitAll(links.Select(x => TraversePage(x)).ToArray());
         }
 
         private IEnumerable<string> GetUnvisitedLinks(string page)
