@@ -23,15 +23,29 @@
             {
                 Task.Run(async () => { await traverser.Run(); }).Wait();
             }
-            catch (AggregateException exceptions)
+            catch (AggregateException aggregateException)
             {
-                Console.WriteLine($"ERROR");
-                foreach (var ex in exceptions.InnerExceptions)
-                {
-                    Console.WriteLine(ex.Message);
-                }
+                Console.WriteLine("");
+                Console.WriteLine("ERRORS OCCURRED");
+                DisplayErrors(aggregateException);
+                Console.WriteLine("");
             }
             Console.WriteLine($"Done traversing");
+        }
+
+        private static void DisplayErrors(AggregateException aggregateException)
+        {
+            foreach (var exception in aggregateException.InnerExceptions)
+            {
+                if (exception is AggregateException innerAggregate)
+                {
+                    DisplayErrors(innerAggregate);
+                }
+                else
+                {
+                    Console.WriteLine(exception.Message);
+                }
+            }
         }
     }
 }
